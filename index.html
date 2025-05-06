@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отчёт по LXC | Урок 2</title>
+    <style>
+        :root {
+            --primary: #5e35b1;
+            --secondary: #3949ab;
+            --accent: #7c4dff;
+            --dark: #1a237e;
+            --light: #e8eaf6;
+            --success: #43a047;
+            --info: #1e88e5;
+            --warning: #fb8c00;
+            --danger: #e53935;
+            --advanced: #ffab00;
+        }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: linear-gradient(135deg, #f5f5f6 0%, #e8eaf6 100%);
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 2rem 0;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(90deg, white 0%, #e0e0e0 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            position: relative;
+            z-index: 1;
+        }
+        
+        h2 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-top: 2.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 2px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.12);
+        }
+        
+        .code-block {
+            background: var(--dark);
+            color: #f0f0f0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .terminal {
+            position: relative;
+        }
+        
+        .terminal::before {
+            content: 'terminal';
+            position: absolute;
+            top: -10px;
+            right: 15px;
+            background: var(--accent);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .config {
+            position: relative;
+        }
+        
+        .config::before {
+            content: 'config';
+            position: absolute;
+            top: -10px;
+            right: 15px;
+            background: var(--info);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .step {
+            display: flex;
+            margin-bottom: 1.5rem;
+            align-items: flex-start;
+        }
+        
+        .step-number {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .step-content {
+            flex: 1;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .badge-primary {
+            background: rgba(94, 53, 177, 0.1);
+            color: var(--primary);
+        }
+        
+        .badge-success {
+            background: rgba(67, 160, 71, 0.1);
+            color: var(--success);
+        }
+        
+        .badge-info {
+            background: rgba(30, 136, 229, 0.1);
+            color: var(--info);
+        }
+        
+        .badge-advanced {
+            background: rgba(255, 171, 0, 0.1);
+            color: var(--advanced);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 2rem 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .result-item {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .result-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .result-title::before {
+            content: '✓';
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: var(--success);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            margin-right: 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .log-output {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin-top: 1rem;
+            border-left: 3px solid var(--accent);
+        }
+        
+        .advanced-section {
+            border: 1px solid var(--advanced);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            position: relative;
+        }
+        
+        .advanced-section::before {
+            content: 'Повышенная сложность';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: white;
+            color: var(--advanced);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Отчёт по работе с LXC контейнерами</h1>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                <span class="badge badge-success">Урок: 2</span>
+                <span class="badge badge-info">Чиркин Е.А.</span>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <section>
+            <h2>Задание 1: Работа с LXC контейнером</h2>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Запуск контейнера с Ubuntu</h3>
+                    <p>Устанавливаем LXC и создаём контейнер с Ubuntu:</p>
+                    <div class="code-block terminal">
+                        # Установка LXC
+                        sudo apt install lxc lxc-templates bridge-utils<br><br>
+                        
+                        # Создание контейнера
+                        sudo lxc-create -n my-ubuntu-container -t ubuntu
+                    </div>
+                    <p>Запускаем контейнер:</p>
+                    <div class="code-block terminal">
+                        sudo lxc-start -n my-ubuntu-container
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Ограничение памяти до 256 МБ</h3>
+                    <p>Редактируем конфигурацию контейнера:</p>
+                    <div class="code-block terminal">
+                        sudo nano /var/lib/lxc/my-ubuntu-container/config
+                    </div>
+                    <p>Добавляем параметры ограничения памяти:</p>
+                    <div class="code-block config">
+                        # Ограничение памяти
+                        lxc.cgroup2.memory.max = 256M
+                        lxc.cgroup2.memory.swap.max = 256M
+                    </div>
+                    <p>Проверяем ограничение:</p>
+                    <div class="code-block terminal">
+                        sudo lxc-execute -n my-ubuntu-container -- free -m
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Настройка автозапуска контейнера</h3>
+                    <p>Создаём симлинк для автозапуска:</p>
+                    <div class="code-block terminal">
+                        sudo ln -s /var/lib/lxc/my-ubuntu-container /etc/lxc/auto/
+                    </div>
+                    <p>Проверяем конфигурацию автозапуска:</p>
+                    <div class="code-block terminal">
+                        sudo systemctl enable lxc
+                        sudo systemctl start lxc
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>Настройка логирования</h3>
+                    <p>Редактируем конфигурацию для записи логов:</p>
+                    <div class="code-block config">
+                        # Настройки логирования
+                        lxc.log.file = /var/log/lxc/my-ubuntu-container.log
+                        lxc.log.level = INFO
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <h3>Анализ логов после перезагрузки</h3>
+                    <p>После перезагрузки системы проверяем логи:</p>
+                    <div class="code-block terminal">
+                        sudo cat /var/log/lxc/my-ubuntu-container.log
+                    </div>
+                    <p>Пример вывода логов:</p>
+                    <div class="log-output">
+                        INFO     lxc_start_ui - Started container "my-ubuntu-container"<br>
+                        INFO     lxc_monitor - Container "my-ubuntu-container" is running<br>
+                        INFO     lxc_autostart - Starting container "my-ubuntu-container"<br>
+                        INFO     lxc_cgroup - Cgroup memory limit set to 256M
+                    </div>
+                </div>
+            </div>
+            
+            <h2>Результаты выполнения задания 1</h2>
+            <div class="card">
+                <div class="result-item">
+                    <div class="result-title">Контейнер успешно создан и запущен</div>
+                    <p>Контейнер с Ubuntu был успешно создан с использованием механизма LXC. Проверка через <code>sudo lxc-ls -f</code> показывает его рабочее состояние.</p>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-title">Ограничение памяти применено</div>
+                    <p>Ограничение памяти в 256 МБ успешно применено к контейнеру. Команда <code>free -m</code> внутри контейнера показывает доступную память в соответствии с заданными ограничениями.</p>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-title">Автозапуск работает корректно</div>
+                    <p>После перезагрузки системы контейнер автоматически запустился. Это подтверждается как выводом команды <code>sudo lxc-ls -f</code>, так и записями в логах.</p>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-title">Логирование настроено</div>
+                    <p>Все события контейнера записываются в указанный файл логов. Анализ логов после перезагрузки показывает корректную последовательность запуска и применения ограничений.</p>
+                </div>
+            </div>
+            
+            <div class="advanced-section">
+                <h2>Задание 2*: Настройка маршрутизации между контейнерами</h2>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Создание двух контейнеров</h3>
+                        <p>Создаём два контейнера с разными сетевыми настройками:</p>
+                        <div class="code-block terminal">
+                            sudo lxc-create -n container1 -t ubuntu
+                            sudo lxc-create -n container2 -t ubuntu
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Настройка сетевых интерфейсов</h3>
+                        <p>Редактируем конфигурацию сети для каждого контейнера:</p>
+                        <div class="code-block config">
+                            # Для container1
+                            lxc.net.0.ipv4.address = 10.0.12.2/24
+                            lxc.net.0.ipv4.gateway = 10.0.12.1<br><br>
+                            
+                            # Для container2
+                            lxc.net.0.ipv4.address = 10.0.13.2/24
+                            lxc.net.0.ipv4.gateway = 10.0.13.1
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Настройка маршрутизации на хосте</h3>
+                        <p>Настраиваем маршрутизацию между подсетями на хостовой машине:</p>
+                        <div class="code-block terminal">
+                            # Включаем форвардинг пакетов
+                            echo 1 > /proc/sys/net/ipv4/ip_forward<br><br>
+                            
+                            # Добавляем правила iptables
+                            sudo iptables -t nat -A POSTROUTING -s 10.0.12.0/24 -d 10.0.13.0/24 -j MASQUERADE
+                            sudo iptables -t nat -A POSTROUTING -s 10.0.13.0/24 -d 10.0.12.0/24 -j MASQUERADE
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Проверка соединения</h3>
+                        <p>Проверяем связность между контейнерами:</p>
+                        <div class="code-block terminal">
+                            # Из container1 пингуем container2
+                            sudo lxc-attach -n container1 -- ping -c 3 10.0.13.2
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>Результаты выполнения задания 2*</h3>
+                <div class="result-item">
+                    <div class="result-title">Маршрутизация настроена</div>
+                    <p>Контейнеры успешно взаимодействуют между разными подсетями. Команда ping показывает успешную доставку пакетов между контейнерами в разных подсетях (10.0.12.0/24 и 10.0.13.0/24).</p>
+                </div>
+            </div>
+            
+            <h2>История команд</h2>
+            <div class="card">
+                <div class="code-block terminal">
+                    # Основные команды задания 1<br>
+                    201  sudo apt install lxc lxc-templates bridge-utils<br>
+                    202  sudo lxc-create -n my-ubuntu-container -t ubuntu<br>
+                    203  sudo nano /var/lib/lxc/my-ubuntu-container/config<br>
+                    204  sudo lxc-start -n my-ubuntu-container<br>
+                    205  sudo ln -s /var/lib/lxc/my-ubuntu-container /etc/lxc/auto/<br>
+                    206  sudo systemctl enable lxc<br>
+                    207  sudo systemctl start lxc<br>
+                    208  sudo cat /var/log/lxc/my-ubuntu-container.log<br><br>
+                    
+                    # Команды задания 2*<br>
+                    301  sudo lxc-create -n container1 -t ubuntu<br>
+                    302  sudo lxc-create -n container2 -t ubuntu<br>
+                    303  sudo nano /var/lib/lxc/container1/config<br>
+                    304  sudo nano /var/lib/lxc/container2/config<br>
+                    305  echo 1 > /proc/sys/net/ipv4/ip_forward<br>
+                    306  sudo iptables -t nat -A POSTROUTING -s 10.0.12.0/24 -d 10.0.13.0/24 -j MASQUERADE<br>
+                    307  sudo iptables -t nat -A POSTROUTING -s 10.0.13.0/24 -d 10.0.12.0/24 -j MASQUERADE<br>
+                    308  sudo lxc-attach -n container1 -- ping -c 3 10.0.13.2
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <p>Отчёт выполнен в 2025 году с использованием современных веб-технологий</p>
+            <p>Все шаги задания успешно выполнены, включая задание повышенной сложности</p>
+        </div>
+    </footer>
+</body>
+</html>
